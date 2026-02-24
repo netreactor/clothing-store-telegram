@@ -14,6 +14,31 @@
 
 ---
 
+
+## Telegram Mini App Safety Checklist
+
+Before production launch, verify:
+
+- Frontend uses `BrowserRouter` (not `HashRouter`).
+- `window.Telegram.WebApp.ready()` is called in `frontend/index.html` `<head>` before React loads.
+- Backend CORS allows Telegram WebView origins (`origin: true`).
+- Helmet disables CSP/X-Frame options for API-only backend.
+- Reverse proxy does **not** set `X-Frame-Options` for Mini App frontend.
+- Reverse proxy `proxy_pass` port matches backend `PORT` (default `3001`).
+- Re-authenticate with Telegram on each Mini App open to refresh role claims in JWT.
+- For PM2 + ESM projects, use `ecosystem.config.cjs`.
+- `setChatMenuButton` API calls include `chat_id` when setting per-user button.
+
+Example:
+
+```bash
+curl -X POST "https://api.telegram.org/bot<token>/setChatMenuButton" \
+  -H "Content-Type: application/json" \
+  -d '{"chat_id":123456789,"menu_button":{"type":"web_app","text":"Открыть магазин","web_app":{"url":"https://your-app.vercel.app"}}}'
+```
+
+---
+
 ## PART 1: Backend Deployment (Railway)
 
 ### Step 1: Push Code to GitHub

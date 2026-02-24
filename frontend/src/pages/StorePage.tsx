@@ -213,7 +213,7 @@ export default function StorePage() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <a 
-              href="#/admin" 
+              href="/admin" 
               className="text-sm text-white/70 hover:text-white transition-colors font-medium"
             >
               Админ панель
