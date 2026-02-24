@@ -35,6 +35,7 @@ export default function StorePage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(urlSubcategory ? parseInt(urlSubcategory) : null);
   const [shuffledProducts, setShuffledProducts] = useState(products);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Shuffle products when component mounts or products change
   useEffect(() => {
@@ -60,7 +61,7 @@ export default function StorePage() {
     return () => clearInterval(timer);
   }, [heroSlides]);
 
-  const handleCategoryClick = (categoryId: number | null) => {
+  const handleCategoryClick = (categoryId: number | null, closeDrawer = false) => {
     setSelectedCategory(categoryId);
     setSelectedSubcategory(null);
     if (categoryId) {
@@ -68,11 +69,21 @@ export default function StorePage() {
     } else {
       setSearchParams({});
     }
+
+
+    if (closeDrawer) {
+      setIsMobileMenuOpen(false);
+    }
   };
 
-  const handleSubcategoryClick = (subcategoryId: number) => {
+  const handleSubcategoryClick = (subcategoryId: number, closeDrawer = false) => {
     setSelectedSubcategory(subcategoryId);
     setSearchParams({ subcategory: subcategoryId.toString() });
+
+
+    if (closeDrawer) {
+      setIsMobileMenuOpen(false);
+    }
   };
 
   const displayedProducts = selectedSubcategory
@@ -101,7 +112,7 @@ export default function StorePage() {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ closeOnSelect = false }: { closeOnSelect?: boolean }) => (
     <div className="space-y-1">
       <div 
         className={`liquid-nav-item nav-animate p-3 rounded-xl cursor-pointer transition-all duration-200 ${
@@ -109,7 +120,7 @@ export default function StorePage() {
             ? 'is-active text-white' 
             : 'text-white/75'
         }`}
-        onClick={() => handleCategoryClick(null)}
+        onClick={() => handleCategoryClick(null, closeOnSelect)}
       >
         <span className="font-medium inline-flex items-center gap-2"><Layers className="w-4 h-4" />Все товары</span>
       </div>
@@ -125,7 +136,7 @@ export default function StorePage() {
                   ? 'is-active text-white' 
                   : 'text-white/75'
               }`}
-              onClick={() => handleCategoryClick(category.id)}
+              onClick={() => handleCategoryClick(category.id, closeOnSelect)}
             >
               <span className="font-medium inline-flex items-center gap-2">{(() => { const Icon = getCategoryIcon(category.icon); return <Icon className="w-4 h-4" />; })()}{category.name}</span>
               {catSubcategories.length > 0 && (
@@ -144,7 +155,7 @@ export default function StorePage() {
                     }`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSubcategoryClick(sub.id);
+                      handleSubcategoryClick(sub.id, closeOnSelect);
                     }}
                   >
                     {sub.name}
@@ -193,16 +204,19 @@ export default function StorePage() {
         <div className="liquid-panel flex items-center justify-between px-4 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             {/* Mobile menu */}
-            <Sheet>
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild className="lg:hidden">
                 <Button variant="ghost" size="icon" className="liquid-icon-btn text-white/90 hover:text-white">
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="liquid-sheet w-80 text-white border-white/15">
-                <div className="text-xl font-bold mb-6 text-white">Категории</div>
-                <ScrollArea className="h-[calc(100vh-120px)]">
-                  <SidebarContent />
+              <SheetContent side="left" className="liquid-sheet w-80 text-white border-white/15 p-0">
+                <div className="category-panel-header">
+                  <Layers className="w-4 h-4" />
+                  <span>Категории</span>
+                </div>
+                <ScrollArea className="h-[calc(100vh-72px)] p-4">
+                  <SidebarContent closeOnSelect />
                 </ScrollArea>
               </SheetContent>
             </Sheet>
@@ -213,7 +227,7 @@ export default function StorePage() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <a 
-              href="#/admin" 
+              href="/admin" 
               className="text-sm text-white/70 hover:text-white transition-colors font-medium"
             >
               Админ панель
@@ -226,7 +240,7 @@ export default function StorePage() {
         {/* Sidebar - Desktop */}
         <aside className="hidden lg:block w-80 min-h-[calc(100vh-110px)] sticky top-[102px] p-4 pt-6">
           <div className="liquid-panel p-6">
-            <div className="text-lg font-bold mb-5 text-white">Категории</div>
+            <div className="category-panel-header mb-4"><Layers className="w-4 h-4" /><span>Категории</span></div>
             <ScrollArea className="h-[calc(100vh-180px)]">
               <SidebarContent />
             </ScrollArea>
@@ -239,13 +253,13 @@ export default function StorePage() {
             <TabsList className="liquid-panel mb-6 p-1.5 rounded-2xl border-white/20">
               <TabsTrigger 
                 value="home" 
-                className="liquid-tab-trigger nav-animate data-[state=active]:text-white rounded-xl px-6 py-2.5 transition-all"
+                className="liquid-tab-trigger nav-animate rounded-xl px-6 py-2.5 transition-all"
               >
                 Главная
               </TabsTrigger>
               <TabsTrigger 
                 value="products" 
-                className="liquid-tab-trigger nav-animate data-[state=active]:text-white rounded-xl px-6 py-2.5 transition-all"
+                className="liquid-tab-trigger nav-animate rounded-xl px-6 py-2.5 transition-all"
               >
                 Все товары
               </TabsTrigger>
@@ -364,7 +378,7 @@ export default function StorePage() {
               <div className="mb-8 flex items-center gap-2 text-sm">
                 <span 
                   className={`cursor-pointer transition-colors ${selectedCategory === null ? 'text-white font-medium' : 'text-white/45 hover:text-white'}`}
-                  onClick={() => handleCategoryClick(null)}
+                  onClick={() => handleCategoryClick(null, closeOnSelect)}
                 >
                   Все товары
                 </span>

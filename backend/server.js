@@ -29,38 +29,15 @@ const isNonEmptyString = (value) => typeof value === 'string' && value.trim().le
 
 // 1. Helmet - Security headers
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "https://telegram.org"],
-      imgSrc: ["'self'", "data:", "https:", "http:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", "data:"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
-    },
-  },
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
+  xFrameOptions: false,
 }));
 
-// 2. CORS - Strict configuration
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.FRONTEND_URL].filter(Boolean)
-  : ['http://localhost:5173', 'http://localhost:5174'];
-
+// 2. CORS - Telegram Mini App compatible
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -1024,6 +1001,42 @@ app.delete('/api/admin-users/:id', authenticateToken, requireRole(['master_admin
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/api/admin/add', authenticateToken, requireRole(['admin', 'master_admin']), (req, res) => {
+  try {
+    const { telegram_id, role } = req.body;
+
+    const parsedTelegramId = String(telegram_id || '').trim();
+    if (!/^\d+$/.test(parsedTelegramId)) {
+      return res.status(400).json({ error: 'telegram_id must be a numeric string or number' });
+    }
+
+    if (!['admin', 'master_admin'].includes(role)) {
+      return res.status(400).json({ error: 'role must be admin or master_admin' });
+    }
+
+    if (role === 'master_admin' && req.user?.role !== 'master_admin') {
+      return res.status(403).json({ error: 'Only master_admin can assign master_admin role' });
+    }
+
+    const existing = db.prepare('SELECT id FROM telegram_users WHERE telegram_id = ?').get(parsedTelegramId);
+
+    if (existing) {
+      db.prepare('UPDATE telegram_users SET role = ? WHERE telegram_id = ?').run(role, parsedTelegramId);
+    } else {
+      db.prepare(`
+        INSERT INTO telegram_users (telegram_id, username, first_name, last_name, role)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(parsedTelegramId, null, `User ${parsedTelegramId}`, null, role);
+    }
+
+    const user = db.prepare('SELECT id, telegram_id, username, first_name, last_name, role FROM telegram_users WHERE telegram_id = ?').get(parsedTelegramId);
+    return res.json(user);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 

@@ -57,10 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Auto-authenticate with Telegram if in Telegram environment
   useEffect(() => {
-    if (isReady && isTelegramEnvironment && initData && !token) {
+    if (isReady && isTelegramEnvironment && initData) {
       authenticateWithTelegram();
     }
-  }, [isReady, isTelegramEnvironment, initData, token]);
+  }, [isReady, isTelegramEnvironment, initData]);
 
   const login = (newToken: string, newUser: AuthUser) => {
     setToken(newToken);

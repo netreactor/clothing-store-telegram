@@ -8,6 +8,16 @@
     
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      try {
+        if (window.Telegram && window.Telegram.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+        }
+      } catch (e) {
+        console.error('Telegram WebApp early init failed:', e);
+      }
+    </script>
     
     <title>Clothing Store</title>
     
