@@ -245,7 +245,7 @@ ALTER TABLE posts ADD COLUMN telegram_user_id INTEGER REFERENCES telegram_users(
 
 ### Local Testing (Non-Telegram)
 1. Open http://localhost:5173
-2. Navigate to `#/admin`
+2. Navigate to `/admin`
 3. Click "Use password login"
 4. Enter `admin` / `admin` (if in dev mode)
 5. Test all admin functions

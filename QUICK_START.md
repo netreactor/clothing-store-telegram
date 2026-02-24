@@ -35,7 +35,7 @@ npm run dev
 ### Шаг 3: Откройте в браузере
 
 - **Сайт:** http://localhost:5173
-- **Админка:** http://localhost:5173/#/admin
+- **Админка:** http://localhost:5173/admin
 - **API:** http://localhost:3001/api/products
 
 ### Логин в админ панель:
@@ -69,7 +69,7 @@ npm run dev
 
 ## 🛠️ Как добавить товар?
 
-1. Откройте админку: http://localhost:5173/#/admin
+1. Откройте админку: http://localhost:5173/admin
 2. Войдите (admin/admin)
 3. Вкладка "Товары"
 4. Кнопка "Добавить товар"
