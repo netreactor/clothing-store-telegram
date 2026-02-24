@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiClient } from '@/api/client';
 import { useDatabase } from '@/context/DatabaseContext';
 import { 
   Lock, 
@@ -33,8 +34,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import ReactQuill from 'react-quill-new';
-import ThemeToggle from '@/components/ThemeToggle';
-import { useTheme } from '@/context/ThemeContext';
 import { CATEGORY_ICON_OPTIONS, getCategoryIcon } from '@/lib/categoryIcons';
 import 'react-quill-new/dist/quill.snow.css';
 import type { AdminUser } from '@/types';
@@ -68,9 +67,8 @@ const quillFormats = [
 
 
 export default function AdminPage() {
-  const { theme } = useTheme();
   const { isTelegramEnvironment } = useTelegram();
-  const { user: authUser, isAuthenticated, isLoading: authLoading, isAdmin, isMasterAdmin, logout, authenticateWithPassword } = useAuth();
+  const { user: authUser, isAuthenticated, isLoading: authLoading, isAdmin, logout, authenticateWithPassword } = useAuth();
   
   // Fallback password authentication (development only)
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
@@ -78,6 +76,18 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoginLoading, setIsLoginLoading] = useState(false);
+
+  useEffect(() => {
+    const previousTheme = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', 'light');
+
+    return () => {
+      if (previousTheme) {
+        document.documentElement.setAttribute('data-theme', previousTheme);
+      }
+    };
+  }, []);
+
 
   // Handle password login (fallback for non-Telegram environments in development)
   const handlePasswordLogin = async () => {
@@ -102,7 +112,7 @@ export default function AdminPage() {
   // Show loading state
   if (authLoading) {
     return (
-      <div className="theme-root min-h-screen bg-gray-50 flex items-center justify-center" data-theme={theme}>
+      <div className="theme-root min-h-screen bg-gray-50 flex items-center justify-center" data-theme="light">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Загрузка...</p>
@@ -114,7 +124,7 @@ export default function AdminPage() {
   // Show authentication error or login prompt
   if (!isAuthenticated || !authUser) {
     return (
-      <div className="theme-root min-h-screen bg-gray-50 flex items-center justify-center p-4" data-theme={theme}>
+      <div className="theme-root min-h-screen bg-gray-50 flex items-center justify-center p-4" data-theme="light">
         <Card className="bg-white border-gray-200 w-full max-w-md shadow-xl">
           <CardHeader className="text-center pb-8">
             <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -193,7 +203,7 @@ export default function AdminPage() {
               </div>
             )}
             <a 
-              href="#/" 
+              href="/" 
               className="block text-center text-gray-500 hover:text-black text-sm transition-colors"
             >
               Вернуться на сайт
@@ -207,7 +217,7 @@ export default function AdminPage() {
   // Check if user has admin permissions
   if (!isAdmin) {
     return (
-      <div className="theme-root min-h-screen bg-gray-50 flex items-center justify-center p-4" data-theme={theme}>
+      <div className="theme-root min-h-screen bg-gray-50 flex items-center justify-center p-4" data-theme="light">
         <Card className="bg-white border-gray-200 w-full max-w-md shadow-xl">
           <CardHeader className="text-center pb-8">
             <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -227,7 +237,7 @@ export default function AdminPage() {
               Свяжитесь с администратором для получения прав доступа.
             </p>
             <a 
-              href="#/" 
+              href="/" 
               className="block text-center bg-black text-white hover:bg-gray-800 py-3 rounded-lg transition-colors"
             >
               Вернуться на сайт
@@ -253,9 +263,10 @@ export default function AdminPage() {
     logout();
   };
 
+
   // Main admin panel from original code
   return (
-    <div className="theme-root min-h-screen bg-gray-50" data-theme={theme}>
+    <div className="theme-root admin-panel min-h-screen bg-gray-50" data-theme="light">
       {/* Header */}
       <header className="border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-50">
         <div className="flex items-center justify-between px-4 lg:px-8 py-4">
@@ -266,10 +277,9 @@ export default function AdminPage() {
             </Badge>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
             <span className="text-sm text-gray-500">{currentUser.username}</span>
             <a 
-              href="#/" 
+              href="/" 
               className="text-sm text-gray-500 hover:text-black transition-colors font-medium"
             >
               На сайт
@@ -278,7 +288,7 @@ export default function AdminPage() {
               variant="outline" 
               size="sm" 
               onClick={handleLogout}
-              className="text-gray-600 hover:text-black border-gray-200 hover:border-gray-300"
+              className="btn-secondary"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Выйти
@@ -294,7 +304,7 @@ export default function AdminPage() {
             {currentUser.can_manage_posts && (
               <TabsTrigger 
                 value="posts" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg px-4 py-2.5 transition-all"
+                className="data-[state=active]:bg-gray-200 data-[state=active]:text-gray-900 rounded-lg px-4 py-2.5 transition-all"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Посты
@@ -303,7 +313,7 @@ export default function AdminPage() {
             {currentUser.can_manage_categories && (
               <TabsTrigger 
                 value="categories" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg px-4 py-2.5 transition-all"
+                className="data-[state=active]:bg-gray-200 data-[state=active]:text-gray-900 rounded-lg px-4 py-2.5 transition-all"
               >
                 <FolderTree className="w-4 h-4 mr-2" />
                 Категории
@@ -312,7 +322,7 @@ export default function AdminPage() {
             {currentUser.can_manage_products && (
               <TabsTrigger 
                 value="products" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg px-4 py-2.5 transition-all"
+                className="data-[state=active]:bg-gray-200 data-[state=active]:text-gray-900 rounded-lg px-4 py-2.5 transition-all"
               >
                 <Package className="w-4 h-4 mr-2" />
                 Товары
@@ -321,7 +331,7 @@ export default function AdminPage() {
             {currentUser.can_manage_products && (
               <TabsTrigger 
                 value="hero"
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg px-4 py-2.5 transition-all"
+                className="data-[state=active]:bg-gray-200 data-[state=active]:text-gray-900 rounded-lg px-4 py-2.5 transition-all"
               >
                 <LayoutTemplate className="w-4 h-4 mr-2" />
                 Главный блок
@@ -330,7 +340,7 @@ export default function AdminPage() {
             {currentUser.can_manage_admins && (
               <TabsTrigger 
                 value="admins" 
-                className="data-[state=active]:bg-black data-[state=active]:text-white rounded-lg px-4 py-2.5 transition-all"
+                className="data-[state=active]:bg-gray-200 data-[state=active]:text-gray-900 rounded-lg px-4 py-2.5 transition-all"
               >
                 <Users className="w-4 h-4 mr-2" />
                 Администраторы
@@ -466,7 +476,7 @@ function PostsManager({ currentUser }: { currentUser: AdminUser }) {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                className="btn-primary rounded-lg"
                 onClick={() => {
                   resetForm();
                   setIsDialogOpen(true);
@@ -561,7 +571,7 @@ function PostsManager({ currentUser }: { currentUser: AdminUser }) {
                 <div className="flex gap-3 pt-4">
                   <Button 
                     onClick={handleSubmit}
-                    className="flex-1 bg-black text-white hover:bg-gray-800 rounded-lg"
+                    className="flex-1 btn-primary rounded-lg"
                     disabled={!formData.title.trim() || !formData.content.trim()}
                   >
                     <Save className="w-4 h-4 mr-2" />
@@ -573,7 +583,7 @@ function PostsManager({ currentUser }: { currentUser: AdminUser }) {
                       setIsDialogOpen(false);
                       resetForm();
                     }}
-                    className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                    className="btn-secondary"
                   >
                     <X className="w-4 h-4 mr-2" />
                     Отмена
@@ -606,7 +616,7 @@ function PostsManager({ currentUser }: { currentUser: AdminUser }) {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleEdit(post)}
-                    className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                    className="btn-secondary"
                   >
                     <Edit3 className="w-4 h-4 mr-2" />
                     Редактировать
@@ -735,7 +745,7 @@ function CategoriesManager() {
           </div>
           <Button 
             onClick={handleAddCategory}
-            className="bg-black text-white hover:bg-gray-800 rounded-lg"
+            className="btn-primary rounded-lg"
             disabled={!newCategoryName.trim()}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -779,7 +789,7 @@ function CategoriesManager() {
           </div>
           <Button 
             onClick={handleAddSubcategory}
-            className="bg-black text-white hover:bg-gray-800 rounded-lg"
+            className="btn-primary rounded-lg"
             disabled={!selectedCategoryId || !newSubcategoryName.trim()}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -973,7 +983,7 @@ function ProductsManager() {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                className="btn-primary rounded-lg"
                 onClick={() => {
                   resetForm();
                   setIsDialogOpen(true);
@@ -1100,7 +1110,7 @@ function ProductsManager() {
                 <div className="flex gap-3 pt-4">
                   <Button 
                     onClick={handleSubmit}
-                    className="flex-1 bg-black text-white hover:bg-gray-800 rounded-lg"
+                    className="flex-1 btn-primary rounded-lg"
                     disabled={!formData.name.trim() || !formData.article.trim() || !formData.subcategory_id}
                   >
                     <Save className="w-4 h-4 mr-2" />
@@ -1112,7 +1122,7 @@ function ProductsManager() {
                       setIsDialogOpen(false);
                       resetForm();
                     }}
-                    className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                    className="btn-secondary"
                   >
                     <X className="w-4 h-4 mr-2" />
                     Отмена
@@ -1274,7 +1284,7 @@ function HeroManager() {
               placeholder="Введите текст главного блока"
             />
           </div>
-          <Button onClick={handleSaveText} className="bg-black text-white hover:bg-gray-800 rounded-lg">
+          <Button onClick={handleSaveText} className="btn-primary rounded-lg">
             <Save className="w-4 h-4 mr-2" />
             Сохранить текст
           </Button>
@@ -1299,7 +1309,7 @@ function HeroManager() {
               className="bg-gray-50 border-gray-200"
               placeholder="Подпись (необязательно)"
             />
-            <Button onClick={handleAddSlide} className="bg-black text-white hover:bg-gray-800 rounded-lg">
+            <Button onClick={handleAddSlide} className="btn-primary rounded-lg">
               <Plus className="w-4 h-4 mr-2" />
               Добавить
             </Button>
@@ -1344,6 +1354,10 @@ function AdminsManager() {
   const { adminUsers, addAdminUser, updateAdminUser, deleteAdminUser } = useDatabase();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
+  const [telegramUsers, setTelegramUsers] = useState<any[]>([]);
+  const [telegramId, setTelegramId] = useState('');
+  const [telegramRole, setTelegramRole] = useState<'admin' | 'master_admin'>('admin');
+  const [actionError, setActionError] = useState('');
   
   const [formData, setFormData] = useState({
     username: '',
@@ -1410,6 +1424,37 @@ function AdminsManager() {
     setIsDialogOpen(true);
   };
 
+
+  const loadTelegramUsers = async () => {
+    try {
+      const users = await apiClient.getTelegramUsers();
+      setTelegramUsers(users);
+    } catch {
+      setTelegramUsers([]);
+    }
+  };
+
+  useEffect(() => {
+    loadTelegramUsers();
+  }, []);
+
+  const addTelegramAdmin = async () => {
+    const parsed = Number(telegramId);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      setActionError('Введите корректный Telegram ID');
+      return;
+    }
+
+    try {
+      setActionError('');
+      await apiClient.addTelegramAdmin(parsed, telegramRole);
+      setTelegramId('');
+      await loadTelegramUsers();
+    } catch (error: any) {
+      setActionError(error.message || 'Не удалось добавить администратора');
+    }
+  };
+
   const formatPermissions = (admin: AdminUser) => {
     const perms = [];
     if (admin.can_manage_categories) perms.push('Категории');
@@ -1429,7 +1474,7 @@ function AdminsManager() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-black text-white hover:bg-gray-800 rounded-lg"
+              className="btn-primary rounded-lg"
               onClick={() => {
                 resetForm();
                 setIsDialogOpen(true);
@@ -1519,7 +1564,7 @@ function AdminsManager() {
               <div className="flex gap-3 pt-4">
                 <Button 
                   onClick={handleSubmit}
-                  className="flex-1 bg-black text-white hover:bg-gray-800 rounded-lg"
+                  className="flex-1 btn-primary rounded-lg"
                   disabled={!formData.username.trim() || (!editingAdmin && !formData.password.trim())}
                 >
                   <Save className="w-4 h-4 mr-2" />
@@ -1531,7 +1576,7 @@ function AdminsManager() {
                     setIsDialogOpen(false);
                     resetForm();
                   }}
-                  className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                  className="btn-secondary"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Отмена
@@ -1542,7 +1587,47 @@ function AdminsManager() {
         </Dialog>
       </div>
 
+
+      <Card className="bg-white border-gray-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-gray-900">Telegram администраторы</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Input
+              value={telegramId}
+              onChange={(e) => setTelegramId(e.target.value.replace(/[^0-9]/g, ''))}
+              placeholder="Telegram ID"
+              className="bg-gray-50 border-gray-200"
+            />
+            <Select value={telegramRole} onValueChange={(value: 'admin' | 'master_admin') => setTelegramRole(value)}>
+              <SelectTrigger className="bg-gray-50 border-gray-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-gray-200">
+                <SelectItem value="admin">admin</SelectItem>
+                <SelectItem value="master_admin">master_admin</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={addTelegramAdmin} className="btn-primary">Добавить по Telegram ID</Button>
+          </div>
+          {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+          <div className="space-y-2">
+            {telegramUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{user.first_name || user.username || 'Пользователь'} ({user.telegram_id})</p>
+                  <p className="text-xs text-gray-500">@{user.username || 'без username'}</p>
+                </div>
+                <Badge className={user.role === 'master_admin' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-800'}>{user.role}</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Admins List */}
+
       <div className="space-y-3">
         {adminUsers.map((admin) => (
           <Card key={admin.id} className="bg-white border-gray-200 overflow-hidden">
@@ -1570,7 +1655,7 @@ function AdminsManager() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleEdit(admin)}
-                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                      className="btn-secondary"
                     >
                       <Edit3 className="w-4 h-4 mr-2" />
                       Редактировать

@@ -1004,6 +1004,42 @@ app.delete('/api/admin-users/:id', authenticateToken, requireRole(['master_admin
   }
 });
 
+
+app.post('/api/admin/add', authenticateToken, requireRole(['admin', 'master_admin']), (req, res) => {
+  try {
+    const { telegram_id, role } = req.body;
+
+    const parsedTelegramId = String(telegram_id || '').trim();
+    if (!/^\d+$/.test(parsedTelegramId)) {
+      return res.status(400).json({ error: 'telegram_id must be a numeric string or number' });
+    }
+
+    if (!['admin', 'master_admin'].includes(role)) {
+      return res.status(400).json({ error: 'role must be admin or master_admin' });
+    }
+
+    if (role === 'master_admin' && req.user?.role !== 'master_admin') {
+      return res.status(403).json({ error: 'Only master_admin can assign master_admin role' });
+    }
+
+    const existing = db.prepare('SELECT id FROM telegram_users WHERE telegram_id = ?').get(parsedTelegramId);
+
+    if (existing) {
+      db.prepare('UPDATE telegram_users SET role = ? WHERE telegram_id = ?').run(role, parsedTelegramId);
+    } else {
+      db.prepare(`
+        INSERT INTO telegram_users (telegram_id, username, first_name, last_name, role)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(parsedTelegramId, null, `User ${parsedTelegramId}`, null, role);
+    }
+
+    const user = db.prepare('SELECT id, telegram_id, username, first_name, last_name, role FROM telegram_users WHERE telegram_id = ?').get(parsedTelegramId);
+    return res.json(user);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // Telegram Users Management - Master Admin only
 app.get('/api/telegram-users', authenticateToken, requireRole(['master_admin']), (req, res) => {
   try {
