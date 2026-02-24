@@ -251,6 +251,14 @@ class ApiClient {
   // TELEGRAM USERS (Admin only)
   // ============================================
 
+
+  async addTelegramAdmin(telegramId: number, role: 'admin' | 'master_admin') {
+    return this.request('/admin/add', {
+      method: 'POST',
+      body: JSON.stringify({ telegram_id: telegramId, role }),
+    });
+  }
+
   async getTelegramUsers() {
     return this.request('/telegram-users');
   }
