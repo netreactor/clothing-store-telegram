@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { DatabaseProvider } from '@/context/DatabaseContext';
 import { TelegramProvider } from '@/context/TelegramContext';
 import { AuthProvider } from '@/context/AuthContext';
@@ -49,8 +49,7 @@ class ErrorBoundary extends Component<
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });
-                window.location.hash = '#/';
-                window.location.reload();
+                window.location.href = '/';
               }}
               style={{
                 padding: '0.75rem 2rem',
